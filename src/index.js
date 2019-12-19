@@ -33,7 +33,7 @@ class Demo {
     this.renderer = new WebGLRenderer({ antialias: false });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.scene = new Scene();
-    this.scene.background = new Color(0xffffff);
+    this.scene.background = new Color(0x0);
     this.camera = new PerspectiveCamera(45, 1, 0.1, 1000);
     this.camera.position.set(0, 0, 3);
     document.body.appendChild(this.renderer.domElement);
@@ -46,7 +46,7 @@ class Demo {
   }
 
   createControls() {
-    const { generators, models } = this;
+    const { generators, models, scene } = this;
     const ctrl = new Controls();
     generators.forEach(gen => ctrl.addNoisePanel(gen));
 
@@ -70,6 +70,14 @@ class Demo {
       this.selectModel(idx);
     });
     this.selectModel(this.modelIndex);
+
+    // Background Color
+    ctrl.addColor(ctrl.mainPanel, {
+      label: 'Background',
+      colorMode: 'rgbfv',
+    }, (color) => {
+      scene.background.fromArray(color);
+    });
   }
 
   createModels() {
@@ -97,7 +105,7 @@ class Demo {
   }
 
   getSphereMesh(mat) {
-    const geo = new SphereBufferGeometry(1, 32, 32);
+    const geo = new SphereBufferGeometry(1, 50, 50);
     return new Mesh(geo, mat);
   }
 

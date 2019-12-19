@@ -27,42 +27,42 @@ export default class Controls {
     panel.disable();
   }
 
-  addControl(desc, noise, panel) {
+  addControl(desc, noise, parent) {
     const { state } = noise;
     const { type, name } = desc;
     const onChange = noise.updateFromState.bind(noise);
     switch (type) {
       case 'group':
-        panel.addGroup(desc);
+        parent.addGroup(desc);
         break;
       case 'pad':
-        state[name] = this.addPad(panel, desc, onChange);
+        state[name] = this.addPad(parent, desc, onChange);
         break;
       case 'slider':
-        state[name] = this.addSlider(panel, desc, onChange);
+        state[name] = this.addSlider(parent, desc, onChange);
         break;
       case 'select':
-        state[name] = this.addSelect(panel, desc, onChange);
+        state[name] = this.addSelect(parent, desc, onChange);
         break;
       case 'checkbox':
-        state[name] = this.addCheckbox(panel, desc, onChange);
+        state[name] = this.addCheckbox(parent, desc, onChange);
         break;
     }
   }
 
-  addCheckbox(panel, desc, onChange) {
+  addCheckbox(parent, desc, onChange) {
     const def = { value: false };
     const node = { desc, ...def, ...desc };
-    panel.addCheckbox(node, 'value', {
+    parent.addCheckbox(node, 'value', {
       label: desc.name,
       onChange,
     });
     return node;
   }
 
-  addSelect(panel, desc, onChange) {
+  addSelect(parent, desc, onChange) {
     const node = { desc, options: desc.options, value: 0 };
-    panel.addSelect(node, 'options', {
+    parent.addSelect(node, 'options', {
       label: desc.label || desc.name,
       selected: 1,
       onChange(idx) {
@@ -73,31 +73,52 @@ export default class Controls {
     return node;
   }
 
-  addSlider(panel, desc, onChange) {
+  addSlider(parent, desc, onChange) {
     const def = { value: 0, range: [0, 1] };
     const node = { ...def, ...desc, desc };
-    panel.addSlider(node, 'value', 'range', {
+    parent.addSlider(node, 'value', 'range', {
       label: desc.name,
       onChange,
     });
     return node;
   }
 
-  addPad(panel, desc, onChange) {
+  addPad(parent, desc, onChange) {
     const node = {
       desc,
       str: '0, 0',
       value: [0, 0],
     };
-    panel.addPad(node, 'value', {
+    parent.addPad(node, 'value', {
       onChange() {
         const [x, y] = node.value;
         node.str = `${x.toFixed(3)}, ${y.toFixed(3)}`;
         onChange();
       }
     });
-    panel.addStringOutput(node, 'str', {
+    parent.addStringOutput(node, 'str', {
       label: desc.name,
+    });
+    return node;
+  }
+
+  addColor(parent, desc, onChange) {
+    const { colorMode, label } = desc;
+    const color = colorMode === 'hex' ? '#000000' : [0, 0, 0];
+    const node = { value: color };
+    parent.addColor(node, 'value', {
+      label,
+      colorMode,
+      onChange() {
+        if (colorMode === 'rgbfv') {
+          node.value.forEach((val, idx) => {
+            node.value[idx] = Number(val.toFixed(3));
+          });
+          // reupdate control color text with new format
+          this._updateColor();
+        }
+        onChange(node.value);
+      }
     });
     return node;
   }
