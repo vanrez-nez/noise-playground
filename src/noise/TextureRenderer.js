@@ -20,6 +20,7 @@ import frag from "../shaders/frag-color.glsl";
 
 export default class TextureRenderer {
   constructor({ fragment = frag, vertex = vert, uniforms = {} }) {
+    this.state = {};
     this.shader = { fragment, vertex };
     this.uniforms = uniforms;
     this.clock = new Clock();
@@ -61,9 +62,11 @@ export default class TextureRenderer {
       uniforms: {
         map: { value: target.texture },
         resolution: { value: new Vector2() },
-        displacement: { value: new Vector3() },
-        frequency: { value: 5 },
+        displacement: { value: new Vector2(0.0, 1.0) },
+        speed: { value: 0 },
         time: { value: 0 },
+        mode: { value: 0 },
+        frequency: { value: 10.0 },
         ...uniforms
       }
     });
@@ -79,6 +82,36 @@ export default class TextureRenderer {
     const { clock, material } = this;
     const { uniforms: u } = material;
     u.time.value = clock.getElapsedTime();
+  }
+
+  getControlDescriptors() {
+    return [];
+  }
+
+  setUniformValue(uniform, prop) {
+    const { type } = prop.desc;
+    switch(type) {
+      case 'pad':
+        uniform.value.fromArray(prop.value);
+        break;
+      case 'slider':
+      case 'select':
+        uniform.value = prop.value;
+        break;
+      case 'checkbox':
+        uniform.value = Boolean(prop.value);
+    }
+  }
+
+  onStateChanged() {
+    const { state, material } = this;
+    const { uniforms } = material;
+    for (const key in state) {
+      const prop = state[key];
+      if (prop) {
+        this.setUniformValue(uniforms[key], prop);
+      }
+    }
   }
 
   render(renderer) {

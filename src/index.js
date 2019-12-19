@@ -13,6 +13,7 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import NoiseCellular2d from "./noise/NoiseCellular2d";
+import NoiseCellular2x2 from './noise/NoiseCellular2x2';
 import Controls from "./Controls";
 
 class Demo {
@@ -47,9 +48,14 @@ class Demo {
   initControls() {
     const { generators } = this;
     const controls = new Controls();
-    generators.forEach(gen => controls.addNoiseFolder(gen.id, gen.obj));
-    controls.addNoiseSelect();
-    //controls.selectNoiseFolder(generators[0].id);
+    generators.forEach(gen => controls.addNoisePanel(gen));
+    controls.addNoiseSelect({
+      onChange: (idx) => {
+        this.noiseIndex = idx;
+        this.updateSize();
+      }
+    });
+    controls.selectNoisePanel(this.noiseIndex);
     this.controls = controls;
   }
 
@@ -92,7 +98,9 @@ class Demo {
   }
 
   initNoise() {
-    this.generators = [{ id: "cellular-2d", obj: new NoiseCellular2d() }];
+    this.generators = [
+      //new NoiseCellular2d(),
+      new NoiseCellular2x2()];
   }
 
   onFrame() {
@@ -105,7 +113,7 @@ class Demo {
   }
 
   get selectedNoise() {
-    return this.generators[this.noiseIndex].obj;
+    return this.generators[this.noiseIndex];
   }
 }
-new Demo();
+window.demo = new Demo();
