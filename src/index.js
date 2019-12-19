@@ -7,24 +7,25 @@ import {
   BoxBufferGeometry,
   Mesh,
   Color,
-  MeshBasicMaterial
+  MeshBasicMaterial,
+  SphereBufferGeometry
 } from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import NoiseCellular2d from "./noise/NoiseCellular2d";
-import NoiseCellular2x2 from './noise/NoiseCellular2x2';
+import NoiseCellular from "./noise/NoiseCellular";
 import Controls from "./Controls";
 
 class Demo {
   constructor() {
     this.noiseIndex = 0;
+    this.modelIndex = 0;
     this.initWorld();
     this.attachEvents();
     this.initNoise();
     this.updateSize();
-    this.initMeshes();
-    this.initControls();
+    this.models = this.createModels();
+    this.controls = this.createControls();
     this.onFrame();
   }
 
@@ -38,37 +39,49 @@ class Demo {
     document.body.appendChild(this.renderer.domElement);
   }
 
-  selectMesh(obj) {
-    const { scene } = this;
-    scene.children.forEach(obj => (obj.visible = false));
-    this.selectedMesh = obj;
-    obj.visible = true;
+  selectModel(idx) {
+    const { models } = this;
+    models.forEach(m => (m.mesh.visible = false));
+    models[idx].mesh.visible = true;
   }
 
-  initControls() {
-    const { generators } = this;
-    const controls = new Controls();
-    generators.forEach(gen => controls.addNoisePanel(gen));
-    controls.addNoiseSelect({
-      onChange: (idx) => {
-        this.noiseIndex = idx;
-        this.updateSize();
-      }
+  createControls() {
+    const { generators, models } = this;
+    const ctrl = new Controls();
+    generators.forEach(gen => ctrl.addNoisePanel(gen));
+
+    // Noise Select
+    ctrl.addSelect(ctrl.mainPanel, {
+      label: 'Type',
+      options: generators.map(g => g.title)
+    }, (idx) => {
+      ctrl.selectNoisePanel(idx);
+      this.noiseIndex = idx;
+      this.updateSize();
     });
-    controls.selectNoisePanel(this.noiseIndex);
-    this.controls = controls;
+    ctrl.selectNoisePanel(this.noiseIndex);
+
+    // Model Select
+    ctrl.addSelect(ctrl.mainPanel, {
+      label: 'Model',
+      selected: 1,
+      options: models.map(m => m.name),
+    }, (idx) => {
+      this.selectModel(idx);
+    });
+    this.selectModel(this.modelIndex);
   }
 
-  initMeshes() {
+  createModels() {
+    const { scene } = this;
     const mat = new MeshBasicMaterial({});
-    this.meshes = {
-      plane: this.getPlaneMesh(mat),
-      box: this.getBoxMesh(mat)
-    };
-    for (const name in this.meshes) {
-      this.scene.add(this.meshes[name]);
-    }
-    this.selectMesh(this.meshes.plane);
+    const models = [
+      { name: 'Plane', mesh: this.getPlaneMesh(mat) },
+      { name: 'Box', mesh: this.getBoxMesh(mat) },
+      { name: 'Sphere', mesh: this.getSphereMesh(mat) },
+    ]
+    models.forEach(m => scene.add(m.mesh));
+    return models;
   }
 
   getBoxMesh(mat) {
@@ -80,6 +93,11 @@ class Demo {
 
   getPlaneMesh(mat) {
     const geo = new PlaneBufferGeometry(1, 1);
+    return new Mesh(geo, mat);
+  }
+
+  getSphereMesh(mat) {
+    const geo = new SphereBufferGeometry(1, 32, 32);
     return new Mesh(geo, mat);
   }
 
@@ -99,21 +117,27 @@ class Demo {
 
   initNoise() {
     this.generators = [
-      //new NoiseCellular2d(),
-      new NoiseCellular2x2()];
+      new NoiseCellular({ type: '2d', title: "Cellular 2D" }),
+      new NoiseCellular({ type: '2x2', title: "Cellular 2x2" }),
+      new NoiseCellular({ type: '2x2x2', title: "Cellular 2x2x2" }),
+    ];
   }
 
   onFrame() {
-    const { renderer, scene, camera, selectedMesh, selectedNoise } = this;
+    const { renderer, scene, camera, selectedModel, selectedNoise } = this;
     requestAnimationFrame(this.onFrame.bind(this));
     camera.lookAt(scene.position);
     selectedNoise.render(renderer);
-    selectedMesh.material.map = selectedNoise.target.texture;
+    selectedModel.mesh.material.map = selectedNoise.target.texture;
     renderer.render(scene, camera);
   }
 
   get selectedNoise() {
     return this.generators[this.noiseIndex];
+  }
+
+  get selectedModel() {
+    return this.models[this.modelIndex];
   }
 }
 window.demo = new Demo();

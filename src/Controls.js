@@ -4,29 +4,10 @@ export default class Controls {
   constructor() {
     this.kit = new ControlKit();
     this.panels = [];
-    this.state = {
-      noiseOptions: [],
-      noiseSelect: ""
-    };
-    this.mainPanel = this.getGlobalPanel();
-  }
-
-  getGlobalPanel() {
-    const { kit } = this;
-    const panel = kit.addPanel({ label: 'Options', align: 'left' });
-    return panel;
-  }
-
-  addNoiseSelect(options) {
-    const { state, mainPanel } = this;
-    mainPanel.addSelect(state, "noiseOptions", {
-      target: "noiseSelect",
-      onChange: (idx) => {
-        if (options.onChange) {
-          options.onChange(idx);
-        }
-        this.selectNoisePanel(idx);
-      }
+    this.mainPanel = this.kit.addPanel({
+      label: 'Options',
+      align: 'left',
+      width: 300
     });
   }
 
@@ -34,23 +15,26 @@ export default class Controls {
     const { panels, kit, state } = this;
     const panel = kit.addPanel({
       label: noise.title,
-      align: 'right'
+      align: 'right',
+      width: 300,
     });
     panels.push({ noise, panel });
-    state.noiseOptions.push(noise.title);
-
     // populate panel with controls and link them to noise state
     noise.getControlDescriptors().forEach((descriptor) => {
       this.addControl(descriptor, noise, panel);
     });
+    noise.updateFromState();
     panel.disable();
   }
 
   addControl(desc, noise, panel) {
     const { state } = noise;
     const { type, name } = desc;
-    const onChange = noise.onStateChanged.bind(noise);
+    const onChange = noise.updateFromState.bind(noise);
     switch (type) {
+      case 'group':
+        panel.addGroup(desc);
+        break;
       case 'pad':
         state[name] = this.addPad(panel, desc, onChange);
         break;
@@ -79,11 +63,11 @@ export default class Controls {
   addSelect(panel, desc, onChange) {
     const node = { desc, options: desc.options, value: 0 };
     panel.addSelect(node, 'options', {
-      label: desc.name,
+      label: desc.label || desc.name,
       selected: 1,
       onChange(idx) {
         node.value = idx;
-        onChange();
+        onChange(idx, desc.options[idx]);
       },
     });
     return node;
@@ -119,10 +103,9 @@ export default class Controls {
   }
 
   selectNoisePanel(idx) {
-    const { panels, state } = this;
+    const { panels } = this;
     const target = panels[idx];
     if (target) {
-      state.noiseSelect = target.noise.title;
       panels.forEach(p => p.panel.disable());
       target.panel.enable();
     }
