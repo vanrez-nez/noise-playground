@@ -1,7 +1,6 @@
 #pragma glslify: worley2D = require(glsl-worley/worley2D.glsl)
 
 varying vec2 vUv;
-uniform vec2 resolution;
 uniform vec2 displacement;
 uniform float frequency;
 uniform float time;

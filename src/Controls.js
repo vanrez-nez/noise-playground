@@ -19,73 +19,53 @@ export default class Controls {
       width: 300,
     });
     panels.push({ noise, panel });
-    // populate panel with controls and link them to noise state
-    noise.getControlDescriptors().forEach((descriptor) => {
-      this.addControl(descriptor, noise, panel);
-    });
-    noise.updateFromState();
+    noise.setupControls(this, panel);
     panel.disable();
   }
 
-  addControl(desc, noise, parent) {
-    const { state } = noise;
-    const { type, name } = desc;
-    const onChange = noise.updateFromState.bind(noise);
-    switch (type) {
-      case 'group':
-        parent.addGroup(desc);
-        break;
-      case 'pad':
-        state[name] = this.addPad(parent, desc, onChange);
-        break;
-      case 'slider':
-        state[name] = this.addSlider(parent, desc, onChange);
-        break;
-      case 'select':
-        state[name] = this.addSelect(parent, desc, onChange);
-        break;
-      case 'checkbox':
-        state[name] = this.addCheckbox(parent, desc, onChange);
-        break;
-    }
+  addGroup(parent, opts) {
+    parent.addGroup(opts);
   }
 
-  addCheckbox(parent, desc, onChange) {
+  addCheckbox(parent, opts, onChange) {
     const def = { value: false };
-    const node = { desc, ...def, ...desc };
+    const node = { opts, ...def, ...opts };
     parent.addCheckbox(node, 'value', {
-      label: desc.name,
-      onChange,
-    });
-    return node;
-  }
-
-  addSelect(parent, desc, onChange) {
-    const node = { desc, options: desc.options, value: 0 };
-    parent.addSelect(node, 'options', {
-      label: desc.label || desc.name,
-      selected: 1,
-      onChange(idx) {
-        node.value = idx;
-        onChange(idx, desc.options[idx]);
+      label: opts.label || opts.name,
+      onChange() {
+        onChange(node.value);
       },
     });
     return node;
   }
 
-  addSlider(parent, desc, onChange) {
-    const def = { value: 0, range: [0, 1] };
-    const node = { ...def, ...desc, desc };
-    parent.addSlider(node, 'value', 'range', {
-      label: desc.name,
-      onChange,
+  addSelect(parent, opts, onChange) {
+    const node = { opts, options: opts.options, value: opts.options[0] };
+    parent.addSelect(node, 'options', {
+      label: opts.label || opts.name,
+      target: 'value',
+      onChange(idx) {
+        onChange(idx, opts.options[idx]);
+      },
     });
     return node;
   }
 
-  addPad(parent, desc, onChange) {
+  addSlider(parent, opts, onChange) {
+    const def = { value: 0, range: [0, 1] };
+    const node = { ...def, ...opts, opts };
+    parent.addSlider(node, 'value', 'range', {
+      label: opts.label || opts.name,
+      onChange() {
+        onChange(node.value);
+      },
+    });
+    return node;
+  }
+
+  addPad(parent, opts, onChange) {
     const node = {
-      desc,
+      opts,
       str: '0, 0',
       value: [0, 0],
     };
@@ -93,21 +73,21 @@ export default class Controls {
       onChange() {
         const [x, y] = node.value;
         node.str = `${x.toFixed(3)}, ${y.toFixed(3)}`;
-        onChange();
+        onChange(node.value);
       }
     });
     parent.addStringOutput(node, 'str', {
-      label: desc.name,
+      label: opts.label || opts.name,
     });
     return node;
   }
 
-  addColor(parent, desc, onChange) {
-    const { colorMode, label } = desc;
+  addColor(parent, opts, onChange) {
+    const { colorMode } = opts;
     const color = colorMode === 'hex' ? '#000000' : [0, 0, 0];
     const node = { value: color };
     parent.addColor(node, 'value', {
-      label,
+      label: opts.label || opts.name,
       colorMode,
       onChange() {
         if (colorMode === 'rgbfv') {

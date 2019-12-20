@@ -1,8 +1,6 @@
-precision highp float;
 #pragma glslify: worley2x2 = require(glsl-worley/worley2x2.glsl)
 
 varying vec2 vUv;
-uniform vec2 resolution;
 uniform vec2 displacement;
 uniform float frequency;
 uniform float time;

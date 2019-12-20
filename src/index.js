@@ -1,13 +1,15 @@
 import "./styles.css";
 import {
+  AxesHelper,
+  VertexNormalsHelper,
+  Group,
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  PlaneBufferGeometry,
-  BoxBufferGeometry,
   Mesh,
   Color,
-  MeshBasicMaterial,
+  PlaneBufferGeometry,
+  BoxBufferGeometry,
   SphereBufferGeometry
 } from "three";
 
@@ -19,12 +21,15 @@ import Controls from "./Controls";
 class Demo {
   constructor() {
     this.noiseIndex = 0;
-    this.modelIndex = 1;
+    this.modelIndex = 0;
+    this.navigationMode = 0;
     this.initWorld();
     this.attachEvents();
     this.initNoise();
     this.updateSize();
+    this.helpers = this.createHelpers();
     this.models = this.createModels();
+    this.orbitControls = this.createOrbitControls();
     this.controls = this.createControls();
     this.onFrame();
   }
@@ -39,75 +44,151 @@ class Demo {
     document.body.appendChild(this.renderer.domElement);
   }
 
+  createOrbitControls() {
+    const { camera, renderer } = this;
+    const oc = new OrbitControls(camera, renderer.domElement);
+    oc.autoRotate = true;
+    oc.enableDamping = true;
+    oc.enablePan = false;
+    oc.maxDistance = 10;
+    oc.minDistance = 1;
+    return oc;
+  }
+
   selectModel(idx) {
     const { models } = this;
-    models.forEach(m => (m.mesh.visible = false));
-    models[idx].mesh.visible = true;
+    models.forEach((m) => {
+      m.mesh.visible = false;
+      m.helper.visible = false;
+    });
+    const model = models[idx];
+    if (model) {
+      model.mesh.visible = true;
+      model.helper.visible = true;
+      this.modelIndex = idx;
+    }
+  }
+
+  selectGenerator(idx) {
+    const { controls } = this;
+    this.noiseIndex = idx;
+    controls.selectNoisePanel(idx);
+  }
+
+  selectNavigationMode(idx) {
+    const { orbitControls: oc } = this;
+    oc.autoRotate = idx === 1;
+    oc.enabled = idx < 2;
+    this.navigationMode = idx;
+    oc.reset();
+  }
+
+  createHelpers() {
+    const { scene } = this;
+    const axesHelper = new AxesHelper(2);
+    axesHelper.position.z += 0.01;
+    axesHelper.visible = false;
+    const normalHelperGroup = new Group();
+    normalHelperGroup.visible = false;
+    scene.add(axesHelper, normalHelperGroup);
+    return {
+      axesHelper,
+      normalHelperGroup,
+    };
   }
 
   createControls() {
-    const { generators, models, scene } = this;
+    const { generators, models, scene, helpers } = this;
     const ctrl = new Controls();
+    const { mainPanel: parent } = ctrl;
     generators.forEach(gen => ctrl.addNoisePanel(gen));
 
     // Noise Select
-    ctrl.addSelect(ctrl.mainPanel, {
+    ctrl.addSelect(parent, {
       label: 'Type',
       options: generators.map(g => g.title)
     }, (idx) => {
-      ctrl.selectNoisePanel(idx);
-      this.noiseIndex = idx;
-      this.updateSize();
+      this.selectGenerator(idx);
     });
     ctrl.selectNoisePanel(this.noiseIndex);
 
     // Model Select
-    ctrl.addSelect(ctrl.mainPanel, {
+    ctrl.addSelect(parent, {
       label: 'Model',
-      selected: 1,
       options: models.map(m => m.name),
     }, (idx) => {
-      this.modelIndex = idx;
       this.selectModel(idx);
     });
     this.selectModel(this.modelIndex);
 
     // Background Color
-    ctrl.addColor(ctrl.mainPanel, {
+    ctrl.addColor(parent, {
       label: 'Background',
       colorMode: 'rgbfv',
     }, (color) => {
       scene.background.fromArray(color);
     });
+
+    // Navigation Mode
+    this.selectNavigationMode(this.navigationMode);
+    ctrl.addSelect(parent, {
+      label: 'Navigation',
+      options: ['Interactive', 'Auto-rotate', 'Static'],
+    }, (idx) => {
+      this.selectNavigationMode(idx);
+    });
+
+    // Axis Helper Checkbox
+    ctrl.addCheckbox(parent, {
+      label: 'Axes Helper',
+    }, (val) => {
+      helpers.axesHelper.visible = val;
+    });
+
+    // Normal Helper Checkbox
+    ctrl.addCheckbox(parent, {
+      label: 'Normals Helper',
+    }, (val) => {
+      helpers.normalHelperGroup.visible = val;
+    });
+
+    return ctrl;
   }
 
   createModels() {
-    const { scene } = this;
-    const mat = new MeshBasicMaterial({});
+    const { scene, helpers } = this;
     const models = [
-      { name: 'Plane', mesh: this.getPlaneMesh(mat) },
-      { name: 'Box', mesh: this.getBoxMesh(mat) },
-      { name: 'Sphere', mesh: this.getSphereMesh(mat) },
-    ]
-    models.forEach(m => scene.add(m.mesh));
+      this.getPlaneModel(),
+      this.getBoxModel(),
+      this.getSphereModel(),
+    ];
+    models.forEach(m => {
+      helpers.normalHelperGroup.add(m.helper);
+      scene.add(m.mesh);
+    });
     return models;
   }
 
-  getBoxMesh(mat) {
-    const geo = new BoxBufferGeometry(1, 1, 1);
-    const m = new Mesh(geo, mat);
-    m.rotation.set(Math.PI / 4, Math.PI / 4, 0);
-    return m;
-  }
-
-  getPlaneMesh(mat) {
+  getPlaneModel() {
     const geo = new PlaneBufferGeometry(1, 1);
-    return new Mesh(geo, mat);
+    const mesh = new Mesh(geo);
+    const helper = new VertexNormalsHelper(mesh, 0.1);
+    return { name: 'Plane', mesh, helper };
   }
 
-  getSphereMesh(mat) {
+  getBoxModel() {
+    const geo = new BoxBufferGeometry(1, 1, 1);
+    const mesh = new Mesh(geo);
+    mesh.rotation.set(Math.PI / 4, Math.PI / 4, 0);
+    const helper = new VertexNormalsHelper(mesh, 0.1);
+    return { name: 'Box', mesh, helper };
+  }
+
+  getSphereModel() {
     const geo = new SphereBufferGeometry(1, 50, 50);
-    return new Mesh(geo, mat);
+    const mesh = new Mesh(geo);
+    const helper = new VertexNormalsHelper(mesh, 0.1);
+    return { name: 'Sphere', mesh, helper };
   }
 
   attachEvents() {
@@ -115,13 +196,11 @@ class Demo {
   }
 
   updateSize() {
-    const { renderer, camera, selectedNoise } = this;
+    const { renderer, camera } = this;
     const { innerWidth: w, innerHeight: h } = window;
-    renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
-    selectedNoise.setSize(512, 512);
   }
 
   initNoise() {
@@ -133,10 +212,11 @@ class Demo {
   }
 
   onFrame() {
-    const { renderer, scene, camera, selectedModel, selectedNoise } = this;
+    const { renderer, scene, camera, selectedModel, selectedNoise, orbitControls } = this;
     requestAnimationFrame(this.onFrame.bind(this));
     camera.lookAt(scene.position);
     selectedNoise.update();
+    orbitControls.update();
     selectedModel.mesh.material = selectedNoise.material;
     renderer.render(scene, camera);
   }

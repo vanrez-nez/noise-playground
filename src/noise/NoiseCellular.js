@@ -19,18 +19,20 @@ export default class NoiseCellular extends NoiseGenerator {
       uniforms: {
         manhattanDistance: { value: false },
         jitter: { value: 0.8 },
+        mode: { value: 0 },
       }
     });
     this.title = title;
-    this.setCustomDescriptors();
   }
 
-  setCustomDescriptors() {
-    this.customDescriptors = [
-      { type: 'group', label: 'Custom' },
-      { type: 'select', name: 'mode', options: ['F1', 'F2', 'F2 - F1'], selected: 1 },
-      { type: 'checkbox', name: 'manhattanDistance', value: false },
-      { type: 'slider', name: 'jitter', value: 0.8 },
-    ];
+  setupControls(instance, panel) {
+    super.setupControls(instance, panel);
+    const onMode = this.getUniformProxy('mode', 'number');
+    const onMdst = this.getUniformProxy('manhattanDistance', 'number');
+    const onJitter = this.getUniformProxy('jitter', 'number');
+    instance.addGroup(panel, { label: 'Noise' });
+    instance.addSlider(panel, { label: 'Jitter', value: 0.8 }, onJitter);
+    instance.addSelect(panel, { label: 'Mode', options: ['F1', 'F2', 'F2 - F1'] }, onMode);
+    instance.addCheckbox(panel, { label: 'Manhattan Dst', value: false }, onMdst);
   }
 }

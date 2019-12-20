@@ -1,6 +1,7 @@
 import {
   Clock,
   ShaderMaterial,
+  DoubleSide,
   Vector2,
 } from "three";
 
@@ -9,14 +10,11 @@ import frag from "../shaders/frag-color.glsl";
 
 export default class NoiseGenerator {
   constructor({ fragment = frag, vertex = vert, uniforms = {} }) {
-    this.state = {};
-    this.globalDescriptors = [];
-    this.customDescriptors = [];
+    this.speed = 0;
     this.shader = { fragment, vertex };
     this.uniforms = uniforms;
     this.clock = new Clock();
     this.material = this.createMaterial();
-    this.setGlobalDescriptors();
   }
 
   createMaterial() {
@@ -24,8 +22,8 @@ export default class NoiseGenerator {
     return new ShaderMaterial({
       fragmentShader: shader.fragment,
       vertexShader: shader.vertex,
+      side: DoubleSide,
       uniforms: {
-        resolution: { value: new Vector2() },
         displacement: { value: new Vector2(0.0, 1.0) },
         time: { value: 0 },
         mode: { value: 0 },
@@ -35,55 +33,38 @@ export default class NoiseGenerator {
     });
   }
 
-  setSize(width, height) {
-    const { material } = this;
-    material.uniforms.resolution.value.set(width, height);
-  }
-
   updateUniforms() {
-    const { clock, material, state } = this;
+    const { clock, material, speed } = this;
     const { uniforms: u } = material;
-    u.time.value += clock.getDelta() * state.speed.value;
+    u.time.value += clock.getDelta() * speed;
   }
 
-  setGlobalDescriptors() {
-    this.baseDescriptors = [
-      { type: 'group', label: 'Base' },
-      { type: 'slider', name: 'speed', range: [0, 10], value: 1 },
-      { type: 'slider', name: 'frequency', range: [1, 50], value: 10 },
-      { type: 'pad', name: 'displacement' },
-    ];
-  }
-
-  getControlDescriptors() {
-    return this.baseDescriptors.concat(this.customDescriptors);
-  }
-
-  setUniformValue(uniform, prop) {
-    const { type } = prop.desc;
-    switch(type) {
-      case 'pad':
-        uniform.value.fromArray(prop.value);
-        break;
-      case 'slider':
-      case 'select':
-        uniform.value = prop.value;
-        break;
-      case 'checkbox':
-        uniform.value = Boolean(prop.value);
-    }
-  }
-
-  updateFromState() {
-    const { state, material } = this;
-    const { uniforms } = material;
-    for (const key in state) {
-      const prop = state[key];
-      const uniform = uniforms[key];
-      if (prop && uniform) {
-        this.setUniformValue(uniform, prop);
+  getUniformProxy(name, type) {
+    const { uniforms: u } = this.material;
+    const target = u[name];
+    return function(val) {
+      switch(type) {
+        case 'array':
+          target.value.fromArray(val);
+          break;
+        case 'boolean':
+          target.value = Boolean(val);
+          break;
+        case 'number':
+          target.value = val;
+          break;
       }
     }
+  }
+
+  setupControls(instance, panel) {
+    const onSpeed = v => this.speed = v;
+    const onFreq = this.getUniformProxy('frequency', 'number');
+    const onDisplacement = this.getUniformProxy('displacement', 'array');
+    instance.addGroup(panel, { label: 'Generator' });
+    instance.addSlider(panel, { label: 'Speed', range: [0, 10], value: 1 }, onSpeed);
+    instance.addSlider(panel, { label: 'Freq', range: [1, 50], value: 10 }, onFreq);
+    instance.addPad(panel, { label: 'Displacement' }, onDisplacement);
   }
 
   update() {
