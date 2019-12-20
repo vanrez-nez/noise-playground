@@ -1,6 +1,6 @@
-precision highp float;
 #pragma glslify: worley2x2x2 = require(glsl-worley/worley2x2x2.glsl)
 
+varying vec2 vUv;
 uniform vec2 resolution;
 uniform vec2 displacement;
 uniform float frequency;
@@ -10,8 +10,8 @@ uniform bool manhattanDistance;
 uniform int mode;
 
 void main(void) {
-  vec2 uv = gl_FragCoord.xy / resolution.xy;
-	vec3 noise = worley2x2x2(uv * frequency + displacement * time, jitter, manhattanDistance);
+	vec3 p = vec3(vUv * frequency + displacement, time);
+	vec2 noise = worley2x2x2(p, jitter, manhattanDistance);
 	float f = 0.0;
 	if (mode == 0) {
 		f = noise.x;

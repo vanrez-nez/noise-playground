@@ -19,7 +19,7 @@ import Controls from "./Controls";
 class Demo {
   constructor() {
     this.noiseIndex = 0;
-    this.modelIndex = 0;
+    this.modelIndex = 1;
     this.initWorld();
     this.attachEvents();
     this.initNoise();
@@ -67,6 +67,7 @@ class Demo {
       selected: 1,
       options: models.map(m => m.name),
     }, (idx) => {
+      this.modelIndex = idx;
       this.selectModel(idx);
     });
     this.selectModel(this.modelIndex);
@@ -135,8 +136,8 @@ class Demo {
     const { renderer, scene, camera, selectedModel, selectedNoise } = this;
     requestAnimationFrame(this.onFrame.bind(this));
     camera.lookAt(scene.position);
-    selectedNoise.render(renderer);
-    selectedModel.mesh.material.map = selectedNoise.target.texture;
+    selectedNoise.update();
+    selectedModel.mesh.material = selectedNoise.material;
     renderer.render(scene, camera);
   }
 

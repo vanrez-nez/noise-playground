@@ -1,4 +1,4 @@
-import TextureRenderer from "./TextureRenderer";
+import NoiseGenerator from "./NoiseGenerator";
 import cellular2d from "../shaders/noise/cellular-2d.glsl";
 import cellular2x2 from "../shaders/noise/cellular-2x2.glsl";
 import cellular2x2x2 from "../shaders/noise/cellular-2x2x2.glsl";
@@ -12,7 +12,7 @@ const FRAG_TYPES = {
   '2x2x2': cellular2x2x2,
 };
 
-export default class NoiseCellular extends TextureRenderer {
+export default class NoiseCellular extends NoiseGenerator {
   constructor({ type, title }) {
     super({
       fragment: FRAG_TYPES[type],
