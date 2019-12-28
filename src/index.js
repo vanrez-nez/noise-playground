@@ -106,26 +106,22 @@ class Demo {
       this.selectNavigationMode(idx);
     });
 
+    ctrl.addSelect(parent, {
+      label: 'Drawing Mode',
+      options: ['Solid', 'Wireframe', 'Points'],
+    }, (idx) => {
+      const { currentGenerator } = this.generators;
+      const { points, mesh } = this.models.currentModel;
+      mesh.visible = idx === 0 || idx === 1;
+      currentGenerator.material.wireframe = idx === 1;
+      points.visible = idx === 2;
+    });
+
     // Axes Helper Checkbox
     ctrl.addCheckbox(parent, {
       label: 'Axes',
     }, (val) => {
       this.axesHelper.visible = val;
-    });
-
-    ctrl.addCheckbox(parent, {
-      label: 'Wireframe',
-    }, (val) => {
-      const { currentGenerator } = this.generators;
-      currentGenerator.material.wireframe = val;
-    });
-
-    ctrl.addCheckbox(parent, {
-      label: 'Points',
-    }, (val) => {
-      const { points, mesh } = this.models.currentModel;
-      points.visible = val;
-      mesh.visible = !val;
     });
 
     return ctrl;

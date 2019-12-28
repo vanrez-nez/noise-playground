@@ -54,7 +54,7 @@ export default class Models {
   }
 
   getTorusModel() {
-    const geo = new TorusBufferGeometry(2, 0.5, 25, 80);
+    const geo = new TorusBufferGeometry(0.5, 0.15, 25, 80);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     return { name: 'Torus', mesh, points }
