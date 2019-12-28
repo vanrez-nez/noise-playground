@@ -9,24 +9,24 @@ import vert from "../shaders/vertex-pass-through.glsl";
 import frag from "../shaders/frag-color.glsl";
 
 export default class NoiseGenerator {
-  constructor({ fragment = frag, vertex = vert, uniforms = {} }) {
+  constructor({ fragment = frag, vertex = vert, uniforms = {}, defines = {} }) {
     this.speed = 0;
-    this.shader = { fragment, vertex };
-    this.uniforms = uniforms;
+    this.shader = { defines, uniforms, fragment, vertex };
     this.clock = new Clock();
     this.material = this.createMaterial();
   }
 
   createMaterial() {
-    const { shader, uniforms } = this;
+    const { fragment, vertex, uniforms, defines } = this.shader;
     return new ShaderMaterial({
-      fragmentShader: shader.fragment,
-      vertexShader: shader.vertex,
+      fragmentShader: fragment,
+      vertexShader: vertex,
       side: DoubleSide,
+      defines,
       uniforms: {
+        wireframeLinewidth: 2,
         displacement: { value: new Vector2(0.0, 1.0) },
         time: { value: 0 },
-        mode: { value: 0 },
         frequency: { value: 10.0 },
         ...uniforms
       }
@@ -37,6 +37,15 @@ export default class NoiseGenerator {
     const { clock, material, speed } = this;
     const { uniforms: u } = material;
     u.time.value += clock.getDelta() * speed;
+  }
+
+  getDefinesProxy(name) {
+    const { material } = this;
+    const { defines } = material;
+    return function(val) {
+      defines[name] = val;
+      material.needsUpdate = true;
+    }
   }
 
   getUniformProxy(name, type) {

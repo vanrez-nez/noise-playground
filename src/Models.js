@@ -1,78 +1,86 @@
 import {
-  AxesHelper,
-  VertexNormalsHelper,
   PlaneBufferGeometry,
   BoxBufferGeometry,
   SphereBufferGeometry,
+  TorusBufferGeometry,
+  TorusKnotBufferGeometry,
   Mesh,
+  Points,
   Group,
+  Vector3,
 } from 'three';
 
 export default class Models {
-  constructor(modelsGroup, helpersGroup) {
+  constructor(scene) {
+    this.group = new Group();
+    scene.add(this.group);
     this.modelIndex = 0;
     this.items = [
       this.getPlaneModel(),
       this.getBoxModel(),
       this.getSphereModel(),
+      this.getTorusModel(),
+      this.getTorusKnotModel(),
     ];
     this.items.forEach(m => {
-      modelsGroup.add(m.mesh);
+      this.group.add(m.points);
+      this.group.add(m.mesh);
     });
-    this.axesHelper = this.getAxesHelper();
-    this.normalsHelper = this.getNormalsHelper();
-    helpersGroup.add(this.axesHelper);
-    helpersGroup.add(this.normalsHelper);
     this.selectModel(this.modelIndex);
   }
 
   getPlaneModel() {
-    const geo = new PlaneBufferGeometry(1, 1);
+    const geo = new PlaneBufferGeometry(1, 1, 50, 50);
     const mesh = new Mesh(geo);
-    const helper = new VertexNormalsHelper(mesh, 0.1);
-    return { name: 'Plane', mesh, helper };
+    const points = new Points(geo);
+    return { name: 'Plane', mesh, points };
   }
 
   getBoxModel() {
-    const geo = new BoxBufferGeometry(1, 1, 1);
+    const geo = new BoxBufferGeometry(1, 1, 1, 50, 50, 50);
     const mesh = new Mesh(geo);
-    mesh.rotation.set(Math.PI / 4, Math.PI / 4, 0);
-    const helper = new VertexNormalsHelper(mesh, 0.1);
-    return { name: 'Box', mesh, helper };
+    const points = new Points(geo);
+    const rot = new Vector3(Math.PI / 4, Math.PI / 4, 0);
+    mesh.rotation.setFromVector3(rot);
+    points.rotation.setFromVector3(rot);
+    return { name: 'Box', mesh, points };
   }
 
   getSphereModel() {
     const geo = new SphereBufferGeometry(1, 50, 50);
     const mesh = new Mesh(geo);
-    const helper = new VertexNormalsHelper(mesh, 0.1);
-    return { name: 'Sphere', mesh, helper };
+    const points = new Points(geo);
+    return { name: 'Sphere', mesh, points };
   }
 
-  getAxesHelper() {
-    const axesHelper = new AxesHelper(2);
-    axesHelper.position.z += 0.01;
-    axesHelper.visible = false;
-    return axesHelper;
+  getTorusModel() {
+    const geo = new TorusBufferGeometry(2, 0.5, 25, 80);
+    const mesh = new Mesh(geo);
+    const points = new Points(geo);
+    return { name: 'Torus', mesh, points }
   }
 
-  getNormalsHelper() {
-    const { items } = this;
-    const group = new Group();
-    group.visible = false;
-    items.forEach(item => group.add(item.helper));
-    return group;
+  getTorusKnotModel() {
+    const geo = new TorusKnotBufferGeometry(0.5, 0.2, 100, 20);
+    const mesh = new Mesh(geo);
+    const points = new Points(geo);
+    return { name: 'Torus Knot', mesh, points }
   }
 
   selectModel(idx) {
-    const { items } = this;
+    const { items, currentModel } = this;
+    const lastState = {
+      mesh: currentModel.mesh.visible,
+      points: currentModel.points.visible,
+    };
     items.forEach((m) => {
       m.mesh.visible = false;
-      m.helper.visible = false;
+      m.points.visible = false;
     });
     const model = items[idx];
     if (model) {
-      model.mesh.visible = true;
-      model.helper.visible = true;
+      model.mesh.visible = lastState.mesh;
+      model.points.visible = lastState.points;
       this.modelIndex = idx;
     }
   }

@@ -1,7 +1,7 @@
 import "./styles.css";
 import {
-  Group,
   Scene,
+  AxesHelper,
   PerspectiveCamera,
   WebGLRenderer,
   Color,
@@ -19,8 +19,9 @@ class Demo {
     this.attachEvents();
     this.updateSize();
     this.generators = new Generators();
-    this.models = new Models(this.modelsGroup, this.helpersGroup);
+    this.models = new Models(this.scene);
     this.orbitControls = this.createOrbitControls();
+    this.axesHelper = this.createAxesHelper();
     this.controls = this.createControls();
     this.onFrame();
   }
@@ -32,10 +33,16 @@ class Demo {
     this.scene.background = new Color(0x0);
     this.camera = new PerspectiveCamera(45, 1, 0.1, 1000);
     this.camera.position.set(0, 0, 3);
-    this.helpersGroup = new Group();
-    this.modelsGroup = new Group();
-    this.scene.add(this.helpersGroup, this.modelsGroup);
     document.body.appendChild(this.renderer.domElement);
+  }
+
+  createAxesHelper() {
+    const { scene } = this;
+    const axesHelper = new AxesHelper(2);
+    axesHelper.position.z += 0.01;
+    axesHelper.visible = false;
+    scene.add(axesHelper);
+    return axesHelper;
   }
 
   createOrbitControls() {
@@ -99,18 +106,26 @@ class Demo {
       this.selectNavigationMode(idx);
     });
 
-    // Axis Helper Checkbox
+    // Axes Helper Checkbox
     ctrl.addCheckbox(parent, {
-      label: 'Axes Helper',
+      label: 'Axes',
     }, (val) => {
-      models.axesHelper.visible = val;
+      this.axesHelper.visible = val;
     });
 
-    // Normal Helper Checkbox
     ctrl.addCheckbox(parent, {
-      label: 'Normals Helper',
+      label: 'Wireframe',
     }, (val) => {
-      models.normalsHelper.visible = val;
+      const { currentGenerator } = this.generators;
+      currentGenerator.material.wireframe = val;
+    });
+
+    ctrl.addCheckbox(parent, {
+      label: 'Points',
+    }, (val) => {
+      const { points, mesh } = this.models.currentModel;
+      points.visible = val;
+      mesh.visible = !val;
     });
 
     return ctrl;
@@ -129,7 +144,14 @@ class Demo {
   }
 
   onFrame() {
-    const { renderer, scene, camera, models, generators, orbitControls } = this;
+    const {
+      renderer,
+      scene,
+      camera,
+      models,
+      generators,
+      orbitControls,
+    } = this;
     const { currentModel } = models;
     const { currentGenerator } = generators;
     requestAnimationFrame(this.onFrame.bind(this));
@@ -137,6 +159,7 @@ class Demo {
     currentGenerator.update();
     orbitControls.update();
     currentModel.mesh.material = currentGenerator.material;
+    currentModel.points.material = currentGenerator.material;
     renderer.render(scene, camera);
   }
 }
