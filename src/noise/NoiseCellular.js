@@ -29,6 +29,9 @@ export default class NoiseCellular extends NoiseGenerator {
       defines: {
         VERT_MODE: 0,
         FRAG_MODE: 0,
+        POS_MODE: 0,
+        TURBULENCE: false,
+        TURBULENCE_STEPS: '6.0',
       }
     });
     this.title = title;
@@ -38,12 +41,35 @@ export default class NoiseCellular extends NoiseGenerator {
     super.setupControls(instance, panel);
     const onVertMode = this.getDefinesProxy('VERT_MODE');
     const onFragMode = this.getDefinesProxy('FRAG_MODE');
+    const onPosMode = this.getDefinesProxy('POS_MODE');
+    const onTurbulence = this.getDefinesProxy('TURBULENCE');
     const onMdst = this.getUniformProxy('manhattanDistance', 'number');
     const onJitter = this.getUniformProxy('jitter', 'number');
     instance.addGroup(panel, { label: 'Noise' });
     instance.addSlider(panel, { label: 'Jitter', value: 0.8 }, onJitter);
-    instance.addSelect(panel, { label: 'Vertex Mode', options: ['F1', 'F2', 'F2 - F1'] }, onVertMode);
-    instance.addSelect(panel, { label: 'Fragment Mode', options: ['F1', 'F2', 'F2 - F1', 'UV'] }, onFragMode);
+    instance.addSelect(panel, { label: 'Position Func', options: [
+      'xy',
+      'xy - z',
+      'xy * abs( z )',
+      'sin( xy + time )',
+      'normal',
+      'normal - pos.z',
+    ] }, onPosMode);
+    instance.addSelect(panel, { label: 'Vertex Mode', options: [
+      'Bypass',
+      'F1', '1.0 - F1',
+      'F2', '1.0 - F2',
+      'F2 - F1', '1.0 - F2 - F1',
+      'F1 / F2', '1.0 - (F1 / F2)'
+    ] }, onVertMode);
+    instance.addSelect(panel, { label: 'Fragment Mode', options: [
+      'Vertex Distance',
+      'F1', '1.0 - F1',
+      'F2', '1.0 - F2',
+      'F2 - F1', '1.0 - F2 - F1',
+      'F1 / F2', '1.0 - (F1 / F2)',
+    ] }, onFragMode);
+    instance.addCheckbox(panel, { label: 'Turbulence', value: false }, onTurbulence);
     instance.addCheckbox(panel, { label: 'Manhattan Dst', value: false }, onMdst);
   }
 }

@@ -15,29 +15,47 @@ export default class Models {
     this.group = new Group();
     scene.add(this.group);
     this.modelIndex = 0;
-    this.items = [
-      this.getPlaneModel(),
-      this.getBoxModel(),
-      this.getSphereModel(),
-      this.getTorusModel(),
-      this.getTorusKnotModel(),
-    ];
-    this.items.forEach(m => {
-      this.group.add(m.points);
-      this.group.add(m.mesh);
-    });
+    this.items = this.createModels(1);
     this.selectModel(this.modelIndex);
   }
 
-  getPlaneModel() {
-    const geo = new PlaneBufferGeometry(1, 1, 50, 50);
+  createModels(quality) {
+    const { group } = this;
+    const items = [
+      this.getPlaneModel(quality),
+      this.getBoxModel(quality),
+      this.getSphereModel(quality),
+      this.getTorusModel(quality),
+      this.getTorusKnotModel(quality),
+    ];
+    items.forEach(m => {
+      group.add(m.points);
+      group.add(m.mesh);
+      m.points.visible = false;
+    });
+    return items;
+  }
+
+  removeModels() {
+    const { group } = this;
+    group.remove(...group.children);
+  }
+
+  changeModelsQuality(quality) {
+    this.removeModels();
+    this.items = this.createModels(quality);
+    this.selectModel(this.modelIndex);
+  }
+
+  getPlaneModel(q) {
+    const geo = new PlaneBufferGeometry(1, 1, 50 * q, 50 * q);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     return { name: 'Plane', mesh, points };
   }
 
-  getBoxModel() {
-    const geo = new BoxBufferGeometry(1, 1, 1, 50, 50, 50);
+  getBoxModel(q) {
+    const geo = new BoxBufferGeometry(1, 1, 1, 50 * q, 50 * q, 50 * q);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     const rot = new Vector3(Math.PI / 4, Math.PI / 4, 0);
@@ -46,22 +64,22 @@ export default class Models {
     return { name: 'Box', mesh, points };
   }
 
-  getSphereModel() {
-    const geo = new SphereBufferGeometry(1, 50, 50);
+  getSphereModel(q) {
+    const geo = new SphereBufferGeometry(1, 50 * q, 50 * q);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     return { name: 'Sphere', mesh, points };
   }
 
-  getTorusModel() {
-    const geo = new TorusBufferGeometry(0.5, 0.15, 25, 80);
+  getTorusModel(q) {
+    const geo = new TorusBufferGeometry(0.5, 0.15, 25 * q, 80 * q);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     return { name: 'Torus', mesh, points }
   }
 
-  getTorusKnotModel() {
-    const geo = new TorusKnotBufferGeometry(0.5, 0.2, 100, 20);
+  getTorusKnotModel(q) {
+    const geo = new TorusKnotBufferGeometry(0.5, 0.2, 100 * q, 20 * q);
     const mesh = new Mesh(geo);
     const points = new Points(geo);
     return { name: 'Torus Knot', mesh, points }

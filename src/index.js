@@ -31,7 +31,7 @@ class Demo {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.scene = new Scene();
     this.scene.background = new Color(0x0);
-    this.camera = new PerspectiveCamera(45, 1, 0.1, 1000);
+    this.camera = new PerspectiveCamera(65, 1, 0.1, 1000);
     this.camera.position.set(0, 0, 3);
     document.body.appendChild(this.renderer.domElement);
   }
@@ -115,6 +115,13 @@ class Demo {
       mesh.visible = idx === 0 || idx === 1;
       currentGenerator.material.wireframe = idx === 1;
       points.visible = idx === 2;
+    });
+
+    ctrl.addSelect(parent, {
+      label: 'Model Subdivisions',
+      options: ['Low', 'Medium', 'High'],
+    }, (idx) => {
+      this.models.changeModelsQuality(idx + 1);
     });
 
     // Axes Helper Checkbox

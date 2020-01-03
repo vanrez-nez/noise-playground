@@ -13,7 +13,7 @@ const V3Temp = new Vector3();
 
 export default class NoiseGenerator {
   constructor({ fragment = frag, vertex = vert, uniforms = {}, defines = {} }) {
-    this.speed = 0.5;
+    this.speed = 0.15;
     this.direction = new Vector2();
     this.shader = { defines, uniforms, fragment, vertex };
     this.clock = new Clock();
@@ -31,7 +31,7 @@ export default class NoiseGenerator {
         displacement: { value: new Vector2(0.0, 0.0) },
         time: { value: 0 },
         scale: { value: 0.2 },
-        frequency: { value: 10.0 },
+        frequency: { value: 2.0 },
         ...uniforms
       }
     });
@@ -78,8 +78,8 @@ export default class NoiseGenerator {
     const onFreq = this.getUniformProxy('frequency', 'number');
     const onScale = this.getUniformProxy('scale', 'number');
     instance.addGroup(panel, { label: 'Generator' });
-    instance.addSlider(panel, { label: 'Speed', range: [0, 1], value: 0.5 }, onSpeed);
-    instance.addSlider(panel, { label: 'Freq', range: [0.1, 50], value: 10 }, onFreq);
+    instance.addSlider(panel, { label: 'Speed', range: [0, 1], value: 0.15 }, onSpeed);
+    instance.addSlider(panel, { label: 'Freq', range: [0.1, 10], value: 2 }, onFreq);
     instance.addSlider(panel, { label: 'Scale', value: 0.2, range: [0.01, 1] }, onScale);
     instance.addPad(panel, { label: 'Direction' }, onDirection);
   }
